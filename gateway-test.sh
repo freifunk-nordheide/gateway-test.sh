@@ -16,6 +16,10 @@
 # Copyright 2012-2014 Daniel Ehlers
 #
 
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
 # List of gateways to test
 #                      VPN4         VPN0         VPN2
@@ -35,7 +39,7 @@ TARGET_DNS_FFKI_RECORD=vpn0.ffki
 
 # Check if rp_filter is activated
 if test `cat /proc/sys/net/ipv4/conf/$INTERFACE/rp_filter` -ne 0; then
-  echo ERROR: Please deactivate rp_filter on device $INTERFACE.
+  echo ERROR: Please deactivate rp_filter on device $INTERFACE with:
   echo sysctl -w net.ipv4.conf.$INTERFACE.rp_filter=0
   exit 2
 fi
