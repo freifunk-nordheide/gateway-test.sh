@@ -22,7 +22,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # List of gateways to test
-#                      VPN4         VPN0         VPN2
+echo "order:           VPN1         VPN4         VPN0         VPN2"
 DEFAULT_GATEWAYS=${1:-"10.116.136.1 10.116.152.1 10.116.160.1 10.116.168.1"}
 # Interface which should be used for pinging a remote host
 #INTERFACE=br-freifunk
@@ -114,6 +114,35 @@ for gw in $DEFAULT_GATEWAYS; do
   echo " Success"
 done
 
+
+for gw in $DEFAULT_GATEWAYS; do
+
+  echo -n "Ping Test $gw ."
+  #### Gateway functionality ping
+  # -m mark         use mark to tag the packets going out
+  # -I interface    interface is either an address, or an interface name
+  # -W timeout      Time to wait for a response, in seconds
+  # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
+  MAXPING=65507;
+  for i in {1000..1450..10}; do
+    if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+      echo -n "."
+    else
+      echo " Max package size is $i"
+      i=$MAXPING;
+      continue 2
+    fi
+  done
+  for i in {1450..1500..1}; do
+    if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+      echo -n "."
+    else
+      echo " Max package size is $i"
+      i=$MAXPING;
+      continue 2
+    fi
+  done
+done
 #### Compare SOA records
 IFS=$'\n'
 UNIQ_SOA=$(echo -n "${GATEWAY_SOA[*]}" | sort | uniq)
