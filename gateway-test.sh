@@ -15,16 +15,17 @@
 #
 # Copyright 2012-2014 Daniel Ehlers
 #
-
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root" 
-   exit 1
+if [ $1 == "--help" ]; then
+  cat $(dirname $0)/README.md
+  exit 0
 fi
 
 # List of gateways to test
-echo "order:           VPN1         VPN4         VPN0         VPN2"
-DEFAULT_GATEWAYS=${1:-"10.116.136.1 10.116.152.1 10.116.160.1 10.116.168.1"}
+echo                  "VPN0         VPN1         VPN2         VPN4"
+DEFAULT_GATEWAYS=${1:-"10.116.160.1 10.116.136.1 10.116.168.1 10.116.152.1"}
+echo $DEFAULT_GATEWAYS
 # Interface which should be used for pinging a remote host
+#define your interface here, for example:
 #INTERFACE=br-freifunk
 INTERFACE=wlan0
 # routing table which should be used to setup rules
@@ -40,8 +41,14 @@ TARGET_DNS_FFKI_RECORD=vpn0.ffki
 # Check if rp_filter is activated
 if test `cat /proc/sys/net/ipv4/conf/$INTERFACE/rp_filter` -ne 0; then
   echo ERROR: Please deactivate rp_filter on device $INTERFACE with:
+  if [[ $EUID -ne 0 ]]; then echo -n "sudo "; fi
   echo sysctl -w net.ipv4.conf.$INTERFACE.rp_filter=0
   exit 2
+fi
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
 fi
 
 clean_up() {
@@ -124,16 +131,7 @@ for gw in $DEFAULT_GATEWAYS; do
   # -W timeout      Time to wait for a response, in seconds
   # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
   MAXPING=65507;
-  for i in {1000..1450..10}; do
-    if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
-      echo -n "."
-    else
-      echo " Max package size is $i"
-      i=$MAXPING;
-      continue 2
-    fi
-  done
-  for i in {1450..1500..1}; do
+  for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
     if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
       echo -n "."
     else
