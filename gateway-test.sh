@@ -75,7 +75,7 @@ for gw in $DEFAULT_GATEWAYS; do
   echo -n "Testing $gw ."
 
   #### Gateway reachability
-  if  ping -c 2 -i 1 -W 2 -q $gw > /dev/null 2>&1; then
+  if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
     echo -n "."
   else
     echo " Failed - Gateway unreachable"
@@ -83,7 +83,7 @@ for gw in $DEFAULT_GATEWAYS; do
   fi
 
   #### Gateway functionality ping
-  if ping -m 100 -I ${INTERFACE} -c 2  -i 1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+  if ping -m 100 -I ${INTERFACE} -c 2  -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
     echo -n "."
   else
     echo " ping throught the gateway FAILED"
@@ -123,7 +123,7 @@ done
 
 
 for gw in $DEFAULT_GATEWAYS; do
-
+  echo
   echo -n "Ping Test $gw ."
   #### Gateway functionality ping
   # -m mark         use mark to tag the packets going out
@@ -131,13 +131,21 @@ for gw in $DEFAULT_GATEWAYS; do
   # -W timeout      Time to wait for a response, in seconds
   # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
   MAXPING=65507;
+  LAST=0
   for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
-    if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+    if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $gw > /dev/null 2>&1; then
+      if [ $LAST -eq 1 ]; then
+        echo " until $i"
+        LAST=0
+      fi
       echo -n "."
     else
-      echo " Max package size is $i"
-      i=$MAXPING;
-      continue 2
+      if [ $LAST -eq 0 ]; then
+        echo
+        echo " no ping from packagesize $i"
+        LAST=1
+      fi
+      #continue 2
     fi
   done
 done
