@@ -71,7 +71,7 @@ for gw in $DEFAULT_GATEWAYS; do
   ip route add 0.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route add 128.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route replace unreachable default table ${ROUTING_TABLE}
-
+  
   echo -n "Testing $gw ."
 
   #### Gateway reachability
@@ -126,17 +126,10 @@ for gw in $DEFAULT_GATEWAYS; do
 done
 
 
-#### Compare SOA records
-IFS=$'\n'
-UNIQ_SOA=$(echo -n "${GATEWAY_SOA[*]}" | sort | uniq)
-if [ ${#UNIQ_SOA[@]} -gt 1 ] ; then
-  echo "WARN: none unique SOA record"
-fi
-
-
 #### ping with differing packagesizes
 for gw in $DEFAULT_GATEWAYS; do
-   # clean routing table
+  
+  # clean routing table
   ip route flush table ${ROUTING_TABLE}
   # setup routing table
   ip route add 0.0.0.0/1 via $gw table ${ROUTING_TABLE}
@@ -185,6 +178,16 @@ for gw in $DEFAULT_GATEWAYS; do
     fi
   done
 done
+
+
+#### Compare SOA records
+echo "SOA records"
+IFS=$'\n'
+UNIQ_SOA=$(echo -n "${GATEWAY_SOA[*]}" | sort | uniq)
+if [ ${#UNIQ_SOA[@]} -gt 1 ] ; then
+  echo "WARN: none unique SOA record"
+fi
+
 echo done, cleaning up...
 clean_up
 echo done
