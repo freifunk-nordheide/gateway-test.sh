@@ -75,6 +75,10 @@ for gw in $DEFAULT_GATEWAYS; do
   echo -n "Testing $gw ."
 
   #### Gateway reachability
+  # -m mark         use mark to tag the packets going out
+  # -I interface    interface is either an address, or an interface name
+  # -W timeout      Time to wait for a response, in seconds
+  # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
   if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
     echo -n "."
   else
@@ -122,18 +126,29 @@ for gw in $DEFAULT_GATEWAYS; do
 done
 
 
+#### Compare SOA records
+IFS=$'\n'
+UNIQ_SOA=$(echo -n "${GATEWAY_SOA[*]}" | sort | uniq)
+if [ ${#UNIQ_SOA[@]} -gt 1 ] ; then
+  echo "WARN: none unique SOA record"
+fi
+
+
+#### ping with differing packagesizes
 for gw in $DEFAULT_GATEWAYS; do
+   # clean routing table
+  ip route flush table ${ROUTING_TABLE}
+  # setup routing table
+  ip route add 0.0.0.0/1 via $gw table ${ROUTING_TABLE}
+  ip route add 128.0.0.0/1 via $gw table ${ROUTING_TABLE}
+  ip route replace unreachable default table ${ROUTING_TABLE}
+  
+  #### Gateway reachability
   echo
-  echo -n "Ping Test $gw ."
-  #### Gateway functionality ping
-  # -m mark         use mark to tag the packets going out
-  # -I interface    interface is either an address, or an interface name
-  # -W timeout      Time to wait for a response, in seconds
-  # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
-  MAXPING=65507;
+  echo -n "reachability ping Test $gw ."
   LAST=0
   for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
-    if ping -m 100 -I ${INTERFACE} -c 2 -s $i -i .1 -W 2 -q $gw > /dev/null 2>&1; then
+    if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
       if [ $LAST -eq 1 ]; then
         echo " until $i"
         LAST=0
@@ -142,18 +157,34 @@ for gw in $DEFAULT_GATEWAYS; do
     else
       if [ $LAST -eq 0 ]; then
         echo
-        echo " no ping from packagesize $i"
+        echo -n " no ping from packagesize $i"
+        LAST=1
+      fi
+      #continue 2
+    fi
+  done
+  
+  #### Gateway functionality ping
+  echo
+  echo -n "functionality ping Test $gw ."
+  LAST=0
+  for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
+    if ping -m 100 -I ${INTERFACE} -c 2  -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+     if [ $LAST -eq 1 ]; then
+        echo " until $i"
+        LAST=0
+      fi
+      echo -n "."
+    else
+      if [ $LAST -eq 0 ]; then
+        echo
+        echo -n " no ping throught the gateway from packagesize $i"
         LAST=1
       fi
       #continue 2
     fi
   done
 done
-#### Compare SOA records
-IFS=$'\n'
-UNIQ_SOA=$(echo -n "${GATEWAY_SOA[*]}" | sort | uniq)
-if [ ${#UNIQ_SOA[@]} -gt 1 ] ; then
-  echo "WARN: none unique SOA record"
-fi
-
+echo done, cleaning up...
 clean_up
+echo done
