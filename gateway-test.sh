@@ -24,19 +24,29 @@ fi
 echo                  "VPN0         VPN1         VPN2         VPN4"
 DEFAULT_GATEWAYS=${1:-"10.116.160.1 10.116.136.1 10.116.168.1 10.116.152.1"}
 echo $DEFAULT_GATEWAYS
+
 # Interface which should be used for pinging a remote host
-#define your interface here, for example:
-#INTERFACE=br-freifunk
-INTERFACE=wlan0
+#define your interface here, for example: eth0, wlan0 or br-freifunk (default auto)
+INTERFACE=auto
+
 # routing table which should be used to setup rules
 ROUTING_TABLE=100
 # the number which should be used for marking packets
 FWMARK=100
+
+# Top Level Domain of your community
+COMMUNITY_TLD=ffki
+
 # the host we like to ping, ip addr
 TARGET_HOST=8.8.8.8
 # the dns record we like to receive
 TARGET_DNS_RECORD=www.toppoint.de
-TARGET_DNS_FFKI_RECORD=vpn0.ffki
+TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
+
+if [ $INTERFACE == "auto" ]; then
+  INTERFACE=$(ip r | grep default | cut -d ' ' -f 5)
+  echo Inerface: $INTERFACE
+fi
 
 # Check if rp_filter is activated
 if test `cat /proc/sys/net/ipv4/conf/$INTERFACE/rp_filter` -ne 0; then
@@ -111,15 +121,15 @@ for gw in $DEFAULT_GATEWAYS; do
   fi
 
   #### Nameserver test (own domain)
-  if nslookup ${TARGET_DNS_FFKI_RECORD} ${gw} > /dev/null 2>&1 ; then
+  if nslookup ${TARGET_DNS_COMMUNITY_TLD_RECORD} ${gw} > /dev/null 2>&1 ; then
     echo -n "."
   else
-    echo " cannot resolve ffki domain via gateway FAILED"
+    echo " cannot resolve ${COMMUNITY_TLD} domain via gateway FAILED"
     continue
   fi
 
   #### Nameserver SOA Record
-  GATEWAY_SOA+=($(dig "@${gw}" ffki SOA))
+  GATEWAY_SOA+=($(dig "@${gw}" ${COMMUNITY_TLD} SOA))
   echo -n "."
 
   echo " Success"
