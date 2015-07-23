@@ -2,16 +2,16 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation/ either version 3 of the License/ or
 # (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
+# This program is distributed in the hope that it will be useful/
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not/ see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2012-2014 Daniel Ehlers
 #
@@ -22,7 +22,7 @@ fi
 
 
 # Interface which should be used for pinging a remote host
-#define your interface here, for example: eth0, wlan0 or br-freifunk (default auto)
+#define your interface here/ for example: eth0/ wlan0 or br-freifunk (default auto)
 INTERFACE=auto
 
 # routing table which should be used to setup rules
@@ -30,28 +30,37 @@ ROUTING_TABLE=100
 # the number which should be used for marking packets
 FWMARK=100
 
-# the host we like to ping, ip addr
+# the host we like to ping/ ip addr
 TARGET_HOST=8.8.8.8
 
 # Top Level Domain of your community
 COMMUNITY_TLD=ffhh
 
+declare -A GWLIST
+
 if [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
     # List of gateways to test
-    echo                  "VPN0         VPN1         VPN2         VPN4"
-    DEFAULT_GATEWAYS=${1:-"10.116.160.1 10.116.136.1 10.116.168.1 10.116.152.1"}
+     GWLIST=" \
+vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
+vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
+vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
+vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
+
     # the dns record we like to receive
     TARGET_DNS_RECORD=www.toppoint.de
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
 elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     # List of gateways to test
     #alle von http://wiki.freifunk.net/Freifunk_Hamburg/Gateway :
-    #echo                  "gw01        gw02        gw03       gw05       gw08       gw09       gw12"
-    #DEFAULT_GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.3 10.112.1.5 10.112.1.8 10.112.1.9 10.112.1.12"}
+    #GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.3 10.112.1.5 10.112.1.8 10.112.1.9 10.112.1.12"}
     #aktive:
-    echo                  "gw01        gw02        gw05       gw08     "
-    DEFAULT_GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.5 10.112.1.8 "}
-    echo $DEFAULT_GATEWAYS
+    # name/ip/ip6
+    GWLIST=" \
+gw01/10.112.1.11/2a03:2267::202
+gw02/10.112.42.1/2a03:2267::201
+gw05/10.112.42.1/2a03:2267::201
+gw08/10.112.1.8/2a03:2267::b01"
+    
     # the dns record we like to receive
     TARGET_DNS_RECORD=www.ccc.de
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.ffhh
@@ -59,8 +68,8 @@ fi
 
 if [ $INTERFACE = "auto" ]; then
   INTERFACE=$(ip r | grep default | cut -d ' ' -f 5)
-  if [ $INTERFACE = "auto" ]; then 
-      echo "INTERFACE=auto cannot be resolved"
+  if [ "$INTERFACE" = "auto"  -o "$INTERFACE" = "" ]; then 
+      echo "'INTERFACE=auto' cannot be resolved"
       exit
   fi
 fi
@@ -92,7 +101,7 @@ ip rule add fwmark ${FWMARK} table ${ROUTING_TABLE}
 
 GATEWAY_SOA=()
 
-for gw in $DEFAULT_GATEWAYS; do
+cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   # clean routing table
   ip route flush table ${ROUTING_TABLE}
   # setup routing table
@@ -100,17 +109,24 @@ for gw in $DEFAULT_GATEWAYS; do
   ip route add 128.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route replace unreachable default table ${ROUTING_TABLE}
   
-  echo -n "Testing $gw ."
+  echo -n "Testing $name ($gw $gw_ip6) ."
 
   #### Gateway reachability
   # -m mark         use mark to tag the packets going out
-  # -I interface    interface is either an address, or an interface name
-  # -W timeout      Time to wait for a response, in seconds
+  # -I interface    interface is either an address or an interface name
+  # -W timeout      Time to wait for a response in seconds
   # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
   if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
     echo -n "."
   else
     echo " Failed - Gateway unreachable"
+    continue
+  fi
+
+  if  ping6 -c 2 -i .1 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
+    echo -n "."
+  else
+    echo " Failed - Gateway IPv6 unreachable"
     continue
   fi
 
@@ -155,7 +171,7 @@ done
 
 
 #### ping with differing packagesizes
-for gw in $DEFAULT_GATEWAYS; do
+cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   
   # clean routing table
   ip route flush table ${ROUTING_TABLE}
@@ -166,7 +182,7 @@ for gw in $DEFAULT_GATEWAYS; do
   
   #### Gateway reachability
   echo
-  echo -n "reachability ping Test $gw ."
+  echo -n "reachability ping Test $name $gw ."
   LAST=0
   for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
     if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
@@ -217,6 +233,6 @@ if [ ${#UNIQ_SOA[@]} -gt 1 ] ; then
   echo "WARN: none unique SOA record"
 fi
 
-echo done, cleaning up...
+echo done/ cleaning up...
 clean_up
 echo done
