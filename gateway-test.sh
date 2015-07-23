@@ -15,15 +15,11 @@
 #
 # Copyright 2012-2014 Daniel Ehlers
 #
-if [ $1 == "--help" ]; then
+if [ "$1" = "--help" ]; then
   cat $(dirname $0)/README.md
   exit 0
 fi
 
-# List of gateways to test
-echo                  "VPN0         VPN1         VPN2         VPN4"
-DEFAULT_GATEWAYS=${1:-"10.116.160.1 10.116.136.1 10.116.168.1 10.116.152.1"}
-echo $DEFAULT_GATEWAYS
 
 # Interface which should be used for pinging a remote host
 #define your interface here, for example: eth0, wlan0 or br-freifunk (default auto)
@@ -34,22 +30,44 @@ ROUTING_TABLE=100
 # the number which should be used for marking packets
 FWMARK=100
 
-# Top Level Domain of your community
-COMMUNITY_TLD=ffki
-
 # the host we like to ping, ip addr
 TARGET_HOST=8.8.8.8
-# the dns record we like to receive
-TARGET_DNS_RECORD=www.toppoint.de
-TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
 
-if [ $INTERFACE == "auto" ]; then
-  INTERFACE=$(ip r | grep default | cut -d ' ' -f 5)
-  echo Inerface: $INTERFACE
+# Top Level Domain of your community
+COMMUNITY_TLD=ffhh
+
+if [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
+    # List of gateways to test
+    echo                  "VPN0         VPN1         VPN2         VPN4"
+    DEFAULT_GATEWAYS=${1:-"10.116.160.1 10.116.136.1 10.116.168.1 10.116.152.1"}
+    # the dns record we like to receive
+    TARGET_DNS_RECORD=www.toppoint.de
+    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
+elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
+    # List of gateways to test
+    #alle von http://wiki.freifunk.net/Freifunk_Hamburg/Gateway :
+    #echo                  "gw01        gw02        gw03       gw05       gw08       gw09       gw12"
+    #DEFAULT_GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.3 10.112.1.5 10.112.1.8 10.112.1.9 10.112.1.12"}
+    #aktive:
+    echo                  "gw01        gw02        gw05       gw08     "
+    DEFAULT_GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.5 10.112.1.8 "}
+    echo $DEFAULT_GATEWAYS
+    # the dns record we like to receive
+    TARGET_DNS_RECORD=www.ccc.de
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.ffhh
 fi
 
+if [ $INTERFACE = "auto" ]; then
+  INTERFACE=$(ip r | grep default | cut -d ' ' -f 5)
+  if [ $INTERFACE = "auto" ]; then 
+      echo "INTERFACE=auto cannot be resolved"
+      exit
+  fi
+fi
+echo Using interface $INTERFACE for testing community $COMMUNITY_TLD
+
 # Check if rp_filter is activated
-if test `cat /proc/sys/net/ipv4/conf/$INTERFACE/rp_filter` -ne 0; then
+if [ ! "$(cat /proc/sys/net/ipv4/conf/$INTERFACE/rp_filter)" = "0" ]; then
   echo ERROR: Please deactivate rp_filter on device $INTERFACE with:
   if [[ $EUID -ne 0 ]]; then echo -n "sudo "; fi
   echo sysctl -w net.ipv4.conf.$INTERFACE.rp_filter=0
@@ -189,6 +207,7 @@ for gw in $DEFAULT_GATEWAYS; do
   done
 done
 
+echo
 
 #### Compare SOA records
 echo "SOA records"
