@@ -36,52 +36,52 @@ TARGET_HOST=8.8.8.8
 # Top Level Domain of your community
 COMMUNITY_TLD=ffki
 
+# the dns record we like to receive
+TARGET_DNS_RECORD=www.google.de
+
 declare -A GWLIST
 
-if [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
+if [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     # List of gateways to test
-     GWLIST="\
-vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
-vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
-vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
-vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
-
-    # the dns record we like to receive
-    TARGET_DNS_RECORD=www.toppoint.de
-    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
-elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
-    # List of gateways to test
-    #alle von http://wiki.freifunk.net/Freifunk_Hamburg/Gateway :
-    #GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.3 10.112.1.5 10.112.1.8 10.112.1.9 10.112.1.12"}
-    #aktive:
-    # name/ip/ip6
     GWLIST="\
 gw01/10.112.1.11/2a03:2267::202
 gw02/10.112.42.1/2a03:2267::201
 gw05/10.112.42.1/2a03:2267::201
 gw08/10.112.1.8/2a03:2267::b01"
-    
-    # the dns record we like to receive
-    TARGET_DNS_RECORD=www.ccc.de
-    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.ffhh
+    #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
+    # List of gateways to test
+    # name/ip/ip6
+    GWLIST="\
+vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
+vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
+vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
+vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
+    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = ffki_external ]; then #Kiel: 
+    # List of gateways to test
+    # name/ip/ip6
+    GWLIST="\
+vpn0/89.27.152.8/fda1:384a:74de:4242::ff00
+vpn1/176.9.100.90/fda1:384a:74de:4242::ff01
+vpn2/176.9.128.83/fda1:384a:74de:4242::ff02
+vpn4/188.40.113.74/fda1:384a:74de:4242::ff04"
+    TARGET_DNS_COMMUNITY_TLD_RECORD=none
 elif [ $COMMUNITY_TLD = open ]; then # Open gateways for development: 
     # List of gateways to test
      GWLIST="\
 google/8.8.8.8/2001:4860:4860::8888
 High Kiez/144.76.203.42/2001:4860:4860::8888"
-
-    # the dns record we like to receive
-    TARGET_DNS_RECORD=www.toppoint.de
-    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
+    TARGET_DNS_COMMUNITY_TLD_RECORD=none
 elif [ $COMMUNITY_TLD = ffe ]; then # Essen
+    # List of gateways to test
     GWLIST="\
 gw01/10.228.8.1/2a03:2267::202
 gw02/10.228.16.1/2a03:2267::201
 gw03/10.228.24.1/2a03:2267::201
 gw04/10.228.32.1/2a03:2267::b01"
-    # the dns record we like to receive
-    TARGET_DNS_RECORD=www.ccc.de
-    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.ffe
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
 fi
 
 if [ $INTERFACE = "auto" ]; then
@@ -138,14 +138,14 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   # -I interface    interface is either an address or an interface name
   # -W timeout      Time to wait for a response in seconds
   # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
-  if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
+  if ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
     echo -n "."
   else
     echo " Failed - Gateway unreachable"
     continue
   fi
 
-  if  ping6 -c 2 -i .1 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
+  if ping6 -c 2 -i .1 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
     echo -n "."
   else
     echo " Failed - Gateway IPv6 unreachable"
@@ -225,26 +225,28 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   done
   
   #### Gateway functionality ping
-  echo
-  echo -n "functionality ping Test $name $gw ."
-  LAST=0
-  for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
-    if ping -m 100 -I ${INTERFACE} -c 4 -i .01 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
-     if [ $LAST -eq 1 ]; then
-        echo " until $i"
-        LAST=0
-      fi
-      echo -n "."
-    else
-      if [ $LAST -eq 0 ]; then
-        echo
-        echo -n " no ping throught the gateway from packagesize $i"
-        LAST=1
-      fi
-      #continue 2
-    fi
-    trap "echo; exit;" SIGINT SIGTERM
-  done
+  if [ ! $TARGET_DNS_COMMUNITY_TLD_RECORD = "none" ]; then
+      echo
+      echo -n "functionality ping Test $name $gw ."
+      LAST=0
+      for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
+        if ping -m 100 -I ${INTERFACE} -c 4 -i .01 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+         if [ $LAST -eq 1 ]; then
+            echo " until $i"
+            LAST=0
+          fi
+          echo -n "."
+        else
+          if [ $LAST -eq 0 ]; then
+            echo
+            echo -n " no ping throught the gateway from packagesize $i"
+            LAST=1
+          fi
+          #continue 2
+        fi
+        trap "echo; exit;" SIGINT SIGTERM
+      done
+  fi
 done
 
 echo

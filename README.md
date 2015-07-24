@@ -6,7 +6,6 @@
 # Options
 
 --help  show this README.md
-any other argument is treated as Gateway IP array to be used in this script instead the configuration inside 
 
 # Configuration
 
@@ -18,8 +17,9 @@ any other argument is treated as Gateway IP array to be used in this script inst
     
 * test Gateway reachability
 * Gateway functionality ping
+* Gateway functionality ping6
 * DHCP test
 * Nameserver test with `nslookup $TARGET_DNS_RECORD`
-* Nameserver test (own domain) with `nslookup $TARGET_DNS_FFKI_RECORD`
+* Nameserver test for an own domain of the Community
 * Check for duplicate Nameserver SOA Record
 * test ping in different sizes and show the maximum package size which can be transmitted
