@@ -34,13 +34,13 @@ FWMARK=100
 TARGET_HOST=8.8.8.8
 
 # Top Level Domain of your community
-COMMUNITY_TLD=ffhh
+COMMUNITY_TLD=ffki
 
 declare -A GWLIST
 
 if [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
     # List of gateways to test
-     GWLIST=" \
+     GWLIST="\
 vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
 vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
 vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
@@ -55,7 +55,7 @@ elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     #GATEWAYS=${1:-"10.112.1.11 10.112.42.1 10.112.1.3 10.112.1.5 10.112.1.8 10.112.1.9 10.112.1.12"}
     #aktive:
     # name/ip/ip6
-    GWLIST=" \
+    GWLIST="\
 gw01/10.112.1.11/2a03:2267::202
 gw02/10.112.42.1/2a03:2267::201
 gw05/10.112.42.1/2a03:2267::201
@@ -64,6 +64,24 @@ gw08/10.112.1.8/2a03:2267::b01"
     # the dns record we like to receive
     TARGET_DNS_RECORD=www.ccc.de
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.ffhh
+elif [ $COMMUNITY_TLD = open ]; then # Open gateways for development: 
+    # List of gateways to test
+     GWLIST="\
+google/8.8.8.8/2001:4860:4860::8888
+High Kiez/144.76.203.42/2001:4860:4860::8888"
+
+    # the dns record we like to receive
+    TARGET_DNS_RECORD=www.toppoint.de
+    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.ffki
+elif [ $COMMUNITY_TLD = ffe ]; then # Essen
+    GWLIST="\
+gw01/10.228.8.1/2a03:2267::202
+gw02/10.228.16.1/2a03:2267::201
+gw03/10.228.24.1/2a03:2267::201
+gw04/10.228.32.1/2a03:2267::b01"
+    # the dns record we like to receive
+    TARGET_DNS_RECORD=www.ccc.de
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.ffe
 fi
 
 if [ $INTERFACE = "auto" ]; then
@@ -99,6 +117,10 @@ trap clean_up SIGINT
 
 ip rule add fwmark ${FWMARK} table ${ROUTING_TABLE}
 
+# show default route
+echo -n "using gateway route: "
+ip r | grep default
+
 GATEWAY_SOA=()
 
 cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
@@ -108,7 +130,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   ip route add 0.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route add 128.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route replace unreachable default table ${ROUTING_TABLE}
-  
+   
   echo -n "Testing $name ($gw $gw_ip6) ."
 
   #### Gateway reachability
@@ -185,7 +207,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   echo -n "reachability ping Test $name $gw ."
   LAST=0
   for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
-    if  ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
+    if ping -c 4 -i .01 -W 2 -q $gw > /dev/null 2>&1; then
       if [ $LAST -eq 1 ]; then
         echo " until $i"
         LAST=0
@@ -199,14 +221,15 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
       fi
       #continue 2
     fi
+    trap "echo; exit;" SIGINT SIGTERM
   done
   
   #### Gateway functionality ping
   echo
-  echo -n "functionality ping Test $gw ."
+  echo -n "functionality ping Test $name $gw ."
   LAST=0
   for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
-    if ping -m 100 -I ${INTERFACE} -c 2  -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+    if ping -m 100 -I ${INTERFACE} -c 4 -i .01 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
      if [ $LAST -eq 1 ]; then
         echo " until $i"
         LAST=0
@@ -220,6 +243,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
       fi
       #continue 2
     fi
+    trap "echo; exit;" SIGINT SIGTERM
   done
 done
 
