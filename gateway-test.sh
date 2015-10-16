@@ -34,14 +34,20 @@ FWMARK=100
 TARGET_HOST=8.8.8.8
 
 # Top Level Domain of your community
-COMMUNITY_TLD=ffki
+COMMUNITY_TLD=ffnord
 
 # the dns record we like to receive
 TARGET_DNS_RECORD=www.google.de
 
 declare -A GWLIST
 
-if [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
+if [ $COMMUNITY_TLD = ffnord ]; then # Hamburg
+    # List of gateways to test
+    GWLIST="\
+vpn0/89.163.225.200/2001:4ba0:ffec:1ca::2"
+    #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     # List of gateways to test
     GWLIST="\
 gw01/10.112.1.11/2a03:2267::202
