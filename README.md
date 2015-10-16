@@ -5,7 +5,8 @@
 
 # Options
 
---help  show this README.md
+    --help  	show this README.md
+    -v			verbose mode
 
 # Configuration
 

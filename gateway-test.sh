@@ -15,11 +15,16 @@
 #
 # Copyright 2012-2014 Daniel Ehlers
 #
-if [ "$1" = "--help" ]; then
+if [ "$1" == "--help" ]; then
   cat $(dirname $0)/README.md
   exit 0
 fi
 
+VERBOSE="FALSE"
+if [ "$1" == "-v" ]; then
+  VERBOSE="TRUE"
+  echo verbose mode $VERBOSE
+fi
 
 # Interface which should be used for pinging a remote host
 #define your interface here/ for example: eth0/ wlan0 or br-freifunk (default auto)
@@ -41,12 +46,11 @@ TARGET_DNS_RECORD=www.google.de
 
 declare -A GWLIST
 
-if [ $COMMUNITY_TLD = ffnord ]; then # Hamburg
+if [ $COMMUNITY_TLD = ffnord ]; then # Freifunk Nord
     # List of gateways to test
     GWLIST="\
 vpn0/89.163.225.200/2001:4ba0:ffec:1ca::2"
-    #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
-    TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
+    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn01.$COMMUNITY_TLD
 elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     # List of gateways to test
     GWLIST="\
@@ -99,7 +103,11 @@ if [ $INTERFACE = "auto" ]; then
 fi
 echo Using interface $INTERFACE for testing community $COMMUNITY_TLD
 
-# Check if rp_filter is activated
+if [ "$VERBOSE" == "TRUE" ]; then
+  set -x
+fi
+
+: "###Check if rp_filter is activated"
 if [ ! "$(cat /proc/sys/net/ipv4/conf/$INTERFACE/rp_filter)" = "0" ]; then
   echo ERROR: Please deactivate rp_filter on device $INTERFACE with:
   if [[ $EUID -ne 0 ]]; then echo -n "sudo "; fi
@@ -118,55 +126,55 @@ clean_up() {
   exit
 }
 
-# Be sure we clean up
+: "### Be sure we clean up"
 trap clean_up SIGINT
 
 ip rule add fwmark ${FWMARK} table ${ROUTING_TABLE}
 
-# show default route
+: "### show default route"
 echo -n "using gateway route: "
 ip r | grep default
 
 GATEWAY_SOA=()
 
 cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
-  # clean routing table
+  : "### clean routing table"
   ip route flush table ${ROUTING_TABLE}
-  # setup routing table
+  : "### setup routing table"
   ip route add 0.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route add 128.0.0.0/1 via $gw table ${ROUTING_TABLE}
   ip route replace unreachable default table ${ROUTING_TABLE}
    
   echo -n "Testing $name ($gw $gw_ip6) ."
 
-  #### Gateway reachability
+  : "###### Gateway reachability"
   # -m mark         use mark to tag the packets going out
   # -I interface    interface is either an address or an interface name
   # -W timeout      Time to wait for a response in seconds
   # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
-  if ping -c 2 -i .1 -W 2 -q $gw > /dev/null 2>&1; then
+  if ping -c 2 -i .2 -W 2 -q $gw > /dev/null 2>&1; then
     echo -n "."
   else
     echo " Failed - Gateway unreachable"
     continue
   fi
 
-  if ping6 -c 2 -i .1 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
+  if ping6 -c 2 -i .2 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
     echo -n "."
   else
     echo " Failed - Gateway IPv6 unreachable"
     continue
   fi
 
-  #### Gateway functionality ping
-  if ping -m 100 -I ${INTERFACE} -c 2  -i .1 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+  : "###### Gateway functionality ping"
+  if ping -m 100 -I ${INTERFACE} -c 2  -i .2 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
     echo -n "."
   else
     echo " ping throught the gateway FAILED"
     continue
   fi
 
-  #### DHCP test
+  : "###### DHCP test"
   if dhcping -q -i -s "$gw"; then
     echo -n "."
   else
@@ -174,7 +182,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
     continue
   fi
 
-  #### Nameserver test
+  : "###### Nameserver test"
   if nslookup ${TARGET_DNS_RECORD} ${gw} > /dev/null 2>&1 ; then
     echo -n "."
   else
@@ -182,7 +190,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
     continue
   fi
 
-  #### Nameserver test (own domain)
+  : "###### Nameserver test (own domain)"
   if nslookup ${TARGET_DNS_COMMUNITY_TLD_RECORD} ${gw} > /dev/null 2>&1 ; then
     echo -n "."
   else
@@ -190,15 +198,18 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
     continue
   fi
 
-  #### Nameserver SOA Record
+  : "###### Nameserver SOA Record"
   GATEWAY_SOA+=($(dig "@${gw}" ${COMMUNITY_TLD} SOA))
   echo -n "."
 
   echo " Success"
 done
 
+if [ "$VERBOSE" == "TRUE" ]; then
+  set +x
+fi
 
-#### ping with differing packagesizes
+: "###### ping with differing packagesizes"
 cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   
   # clean routing table
