@@ -46,12 +46,7 @@ TARGET_DNS_RECORD=www.google.de
 
 declare -A GWLIST
 
-if [ $COMMUNITY_TLD = ffnord ]; then # Freifunk Nord
-    # List of gateways to test
-    GWLIST="\
-vpn0/89.163.225.200/2001:4ba0:ffec:1ca::2"
-    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn01.$COMMUNITY_TLD
-elif [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
+if [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     # List of gateways to test
     GWLIST="\
 gw01/10.112.1.11/2a03:2267::202
