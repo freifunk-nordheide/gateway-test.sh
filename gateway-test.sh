@@ -92,6 +92,13 @@ gw02/10.228.16.1/2a03:2267::201
 gw03/10.228.24.1/2a03:2267::201
 gw04/10.228.32.1/2a03:2267::b01"
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = ffnord ]; then # Freifunk Nord
+    # List of gateways to test
+    GWLIST="\
+vpn0/10.187.160.1/2a03:2267:4e6f:7264::fd00
+vpn2/10.187.136.1/2a03:2267:4e6f:7264::fd02
+vpn3/10.187.170.1/2a03:2267:4e6f:7264::fd03
+    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 fi
 
 if [ $INTERFACE = "auto" ]; then
