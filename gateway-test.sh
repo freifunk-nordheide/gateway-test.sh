@@ -97,7 +97,7 @@ elif [ $COMMUNITY_TLD = ffnord ]; then # Freifunk Nord
     GWLIST="\
 vpn0/10.187.160.1/2a03:2267:4e6f:7264::fd00
 vpn2/10.187.136.1/2a03:2267:4e6f:7264::fd02
-vpn3/10.187.170.1/2a03:2267:4e6f:7264::fd03
+vpn3/10.187.170.1/2a03:2267:4e6f:7264::fd03"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 fi
 
