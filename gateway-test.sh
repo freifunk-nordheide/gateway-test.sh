@@ -29,6 +29,7 @@ fi
 # Interface which should be used for pinging a remote host
 #define your interface here/ for example: eth0/ wlan0 or br-freifunk (default auto)
 INTERFACE=auto
+#INTERFACE=wlp1s0
 
 # routing table which should be used to setup rules
 ROUTING_TABLE=100
@@ -40,6 +41,7 @@ TARGET_HOST=8.8.8.8
 
 # Top Level Domain of your community
 COMMUNITY_TLD=ffnord
+#COMMUNITY_TLD=ffki
 
 # the dns record we like to receive
 TARGET_DNS_RECORD=www.google.de
@@ -62,8 +64,10 @@ elif [ $COMMUNITY_TLD = ffki ]; then #Kiel:
 vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
 vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
 vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
-vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
+vpn3/10.116.144.1/fda1:384a:74de:4242::ff03
+vpn5/10.116.176.1/fda1:384a:74de:4242::ff05"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
+#vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
 elif [ $COMMUNITY_TLD = ffki_external ]; then #Kiel: 
     # List of gateways to test
     # name/ip/ip6
@@ -71,7 +75,7 @@ elif [ $COMMUNITY_TLD = ffki_external ]; then #Kiel:
 vpn0/89.27.152.8/fda1:384a:74de:4242::ff00
 vpn1/176.9.100.90/fda1:384a:74de:4242::ff01
 vpn2/176.9.128.83/fda1:384a:74de:4242::ff02
-vpn4/188.40.113.74/fda1:384a:74de:4242::ff04"
+vpn4/213.239.220.106/fda1:384a:74de:4242::ff03"
     TARGET_DNS_COMMUNITY_TLD_RECORD=none
 elif [ $COMMUNITY_TLD = open ]; then # Open gateways for development: 
     # List of gateways to test
@@ -90,9 +94,18 @@ gw04/10.228.32.1/2a03:2267::b01"
 elif [ $COMMUNITY_TLD = ffnord ]; then # Freifunk Nord
     # List of gateways to test
     GWLIST="\
-vpn0/10.187.160.1/2a03:2267:4e6f:7264::fd00
+vpn0/10.187.160.1/2a03:2267:4e6f:7264::ff00
+vpn1/10.187.150.1/2a03:2267:4e6f:7264::fd01
 vpn2/10.187.136.1/2a03:2267:4e6f:7264::fd02
-vpn3/10.187.170.1/2a03:2267:4e6f:7264::fd03"
+vpn3/10.187.170.1/2a03:2267:4e6f:7264::fd03
+vpn4/10.187.180.1/2a03:2267:4e6f:7264::fd04
+vpn5/10.187.190.1/2a03:2267:4e6f:7264::fd05
+vpn6/10.187.200.1/2a03:2267:4e6f:7264::fd06
+vpn7/10.187.210.1/2a03:2267:4e6f:7264::fd07
+vpn8/10.187.220.1/2a03:2267:4e6f:7264::fd08
+vpn9/10.187.230.1/2a03:2267:4e6f:7264::fd09
+vpn10/10.187.240.1/2a03:2267:4e6f:7264::fd10
+vpn11/10.187.249.1/2a03:2267:4e6f:7264::fd11"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 fi
 
