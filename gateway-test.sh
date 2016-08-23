@@ -94,7 +94,7 @@ gw04/10.228.32.1/2a03:2267::b01"
 elif [ $COMMUNITY_TLD = ffnord ]; then # Freifunk Nord
     # List of gateways to test
     GWLIST="\
-vpn0/10.187.160.1/2a03:2267:4e6f:7264::ff00
+vpn0/10.187.160.1/2a03:2267:4e6f:7264::fd00
 vpn1/10.187.150.1/2a03:2267:4e6f:7264::fd01
 vpn2/10.187.136.1/2a03:2267:4e6f:7264::fd02
 vpn3/10.187.170.1/2a03:2267:4e6f:7264::fd03
