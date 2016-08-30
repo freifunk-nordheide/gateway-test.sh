@@ -30,6 +30,7 @@ fi
 #define your interface here/ for example: eth0/ wlan0 or br-freifunk (default auto)
 INTERFACE=auto
 #INTERFACE=wlp1s0
+#INTERFACE=enx00e04c681b58
 
 # routing table which should be used to setup rules
 ROUTING_TABLE=100
@@ -41,6 +42,7 @@ TARGET_HOST=8.8.8.8
 
 # Top Level Domain of your community
 COMMUNITY_TLD=ffnord
+#COMMUNITY_TLD=fmdk
 #COMMUNITY_TLD=ffki
 
 # the dns record we like to receive
@@ -57,6 +59,12 @@ gw05/10.112.42.1/2a03:2267::201
 gw08/10.112.1.8/2a03:2267::b01"
     #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = fmdk ]; then #Freemesh Denmark:
+    # List of gateways to test
+    # name/ip/ip6
+    GWLIST="\
+vpn0/10.212.0.1/fd35:f308:a922::ff00"
+    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 elif [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
     # List of gateways to test
     # name/ip/ip6
@@ -112,8 +120,8 @@ fi
 if [ $INTERFACE = "auto" ]; then
   INTERFACE=$(ip r | grep default | cut -d ' ' -f 5)
   if [ "$INTERFACE" = "auto"  -o "$INTERFACE" = "" ]; then 
-      echo "'INTERFACE=auto' cannot be resolved"
-      exit
+      echo "'INTERFACE=auto' cannot be resolved, wlp1s0 chosen"
+      INTERFACE=wlp1s0
   fi
 fi
 echo Using interface $INTERFACE for testing community $COMMUNITY_TLD
