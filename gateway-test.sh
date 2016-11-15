@@ -41,9 +41,9 @@ FWMARK=100
 TARGET_HOST=8.8.8.8
 
 # Top Level Domain of your community
-COMMUNITY_TLD=ffnord
+#COMMUNITY_TLD=ffnord
 #COMMUNITY_TLD=fmdk
-#COMMUNITY_TLD=ffki
+COMMUNITY_TLD=ffki
 
 # the dns record we like to receive
 TARGET_DNS_RECORD=www.google.de
@@ -64,7 +64,8 @@ elif [ $COMMUNITY_TLD = fmdk ]; then #Freemesh Denmark:
     # name/ip/ip6
     GWLIST="\
 vpn0/10.212.0.1/fd35:f308:a922::ff00"
-    TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw0.$COMMUNITY_TLD
+    # external 136.243.214.222
 elif [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
     # List of gateways to test
     # name/ip/ip6
@@ -73,7 +74,8 @@ vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
 vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
 vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
 vpn3/10.116.144.1/fda1:384a:74de:4242::ff03
-vpn5/10.116.176.1/fda1:384a:74de:4242::ff05"
+vpn5/10.116.176.1/fda1:384a:74de:4242::ff05
+vpn6/10.116.184.1/fda1:384a:74de:4242::ff06"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 #vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
 elif [ $COMMUNITY_TLD = ffki_external ]; then #Kiel: 
