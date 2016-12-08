@@ -75,7 +75,8 @@ vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
 vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
 vpn3/10.116.144.1/fda1:384a:74de:4242::ff03
 vpn5/10.116.176.1/fda1:384a:74de:4242::ff05
-vpn6/10.116.184.1/fda1:384a:74de:4242::ff06"
+vpn6/10.116.184.1/fda1:384a:74de:4242::ff06
+vpn7/10.116.192.1/fda1:384a:74de:4242::ff07"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 #vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
 elif [ $COMMUNITY_TLD = ffki_external ]; then #Kiel: 
@@ -177,19 +178,20 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   # -I interface    interface is either an address or an interface name
   # -W timeout      Time to wait for a response in seconds
   # -s packetsize   Specifies the number of data bytes to be sent.  The default is 56
-  if ping -c 2 -i .2 -W 2 -q $gw > /dev/null 2>&1; then
-    echo -n "."
-  else
-    echo " Failed - Gateway unreachable"
-    continue
-  fi
-
   if ping6 -c 2 -i .2 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
     echo -n "."
   else
-    echo " Failed - Gateway IPv6 unreachable"
+    echo " Failed - IPv6 unreachable"
     continue
   fi
+  
+  if ping -c 2 -i .2 -W 2 -q $gw > /dev/null 2>&1; then
+    echo -n "."
+  else
+    echo " Failed - IPv4 unreachable"
+    continue
+  fi
+
 
   : "###### Gateway functionality ping"
   if ping -m 100 -I ${INTERFACE} -c 2  -i .2 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
