@@ -40,10 +40,20 @@ FWMARK=100
 # the host we like to ping/ ip addr
 TARGET_HOST=8.8.8.8
 
-# Top Level Domain of your community
-#COMMUNITY_TLD=ffnord
-#COMMUNITY_TLD=fmdk
 COMMUNITY_TLD=ffki
+
+# Detect Top Level Domain of your community
+echo -n "automatic tld detection."
+for tld in ffki ffhh fffl ffnord fmdk ffe; do
+  echo -n "."
+  dig $tld|grep -q NOERROR
+  if [ "$?" == "0" ]; then
+    COMMUNITY_TLD=$tld
+    break
+  fi
+done
+
+echo " $COMMUNITY_TLD"
 
 # the dns record we like to receive
 TARGET_DNS_RECORD=www.google.de
@@ -55,8 +65,11 @@ if [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     GWLIST="\
 gw01/10.112.1.11/2a03:2267::202
 gw02/10.112.42.1/2a03:2267::201
-gw05/10.112.42.1/2a03:2267::201
-gw08/10.112.1.8/2a03:2267::b01"
+gw03/10.112.1.3/2a03:2267::301
+gw05/10.112.1.5/2a03:2267::d01
+gw08/10.112.1.8/2a03:2267::b01
+gw09/10.112.1.9/2a03:2267::901
+gw12/10.112.1.12/2a03:2267::501"
     #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
 elif [ $COMMUNITY_TLD = fmdk ]; then #Freemesh Denmark:
