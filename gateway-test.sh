@@ -79,6 +79,13 @@ vpn6/10.116.184.1/fda1:384a:74de:4242::ff06
 vpn7/10.116.192.1/fda1:384a:74de:4242::ff07"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 #vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
+elif [ $COMMUNITY_TLD = fffl ]; then #Flensburg:
+    GWLIST="\
+snowden.mesh/10.129.1.1/fddf:bf7:10:1:1::1
+gw01/10.129.1.5/fddf:bf7:10:1:1::5
+gw02/10.129.1.2/fddf:bf7:10:1:1::2"
+    TARGET_DNS_COMMUNITY_TLD_RECORD=gw02.$COMMUNITY_TLD
+#vpn4/10.116.152.1/fda1:384a:74de:4242::ff04"
 elif [ $COMMUNITY_TLD = ffki_external ]; then #Kiel: 
     # List of gateways to test
     # name/ip/ip6
@@ -251,7 +258,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   echo -n "reachability ping Test $name $gw ."
   LAST=0
   for i in {50..100..10} {100..1000..100} {1000..1350..10} {1350..1400..1} {1400..1450..10} {1450..1500..1}; do
-    if ping -c 4 -i .01 -W 2 -q $gw > /dev/null 2>&1; then
+    if ssh ping -c 4 -i .01 -W 2 -q $gw > /dev/null 2>&1; then
       if [ $LAST -eq 1 ]; then
         echo " until $i"
         LAST=0
