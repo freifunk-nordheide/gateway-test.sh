@@ -38,9 +38,9 @@ ROUTING_TABLE=100
 FWMARK=100
 
 # the host we like to ping/ ip addr
-TARGET_HOST=8.8.8.8
+TARGET_HOST=217.70.197.62
 
-COMMUNITY_TLD=ffki
+COMMUNITY_TLD=ffnord
 
 # Detect Top Level Domain of your community
 echo -n "automatic tld detection."
@@ -82,8 +82,8 @@ vpn0/10.212.0.1/fd35:f308:a922::ff00"
 elif [ $COMMUNITY_TLD = ffki ]; then #Kiel: 
     # List of gateways to test
     # name/ip/ip6
+#vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
     GWLIST="\
-vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
 vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
 vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
 vpn3/10.116.144.1/fda1:384a:74de:4242::ff03
@@ -136,7 +136,11 @@ vpn7/10.187.210.1/2a03:2267:4e6f:7264::fd07
 vpn8/10.187.220.1/2a03:2267:4e6f:7264::fd08
 vpn9/10.187.230.1/2a03:2267:4e6f:7264::fd09
 vpn10/10.187.240.1/2a03:2267:4e6f:7264::fd10
-vpn11/10.187.249.1/2a03:2267:4e6f:7264::fd11"
+vpn11/10.187.249.1/2a03:2267:4e6f:7264::fd11
+vpn12/10.187.100.1/2a03:2267:4e6f:7264::fd12
+vpn13/10.187.110.1/2a03:2267:4e6f:7264::fd13
+vpn14/10.187.120.1/2a03:2267:4e6f:7264::fd14
+vpn15/10.187.140.1/2a03:2267:4e6f:7264::fd15"
     TARGET_DNS_COMMUNITY_TLD_RECORD=vpn0.$COMMUNITY_TLD
 fi
 
