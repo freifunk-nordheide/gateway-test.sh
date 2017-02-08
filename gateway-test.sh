@@ -44,7 +44,7 @@ COMMUNITY_TLD=ffnord
 
 # Detect Top Level Domain of your community
 echo -n "automatic tld detection."
-for tld in ffki ffhh fffl ffnord fmdk ffe; do
+for tld in ffki ffhh fffl ffnord fmdk ffe ffhl; do
   echo -n "."
   dig $tld|grep -q NOERROR
   if [ "$?" == "0" ]; then
@@ -72,6 +72,14 @@ gw09/10.112.1.9/2a03:2267::901
 gw12/10.112.1.12/2a03:2267::501"
     #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = ffhl ]; then # Luebeck
+    # List of gateways to test
+    GWLIST="\
+muehlentor/10.130.0.254/2001:67c:2d50::a01
+burgtor/10.130.0.255/2001:67c:2d50::a01
+holstentor/10.130.0.253/2001:67c:2d50::a01
+huextertor/10.130.0.252/2001:67c:2d50::a01"
+    TARGET_DNS_COMMUNITY_TLD_RECORD=burgtor.$COMMUNITY_TLD
 elif [ $COMMUNITY_TLD = fmdk ]; then #Freemesh Denmark:
     # List of gateways to test
     # name/ip/ip6
