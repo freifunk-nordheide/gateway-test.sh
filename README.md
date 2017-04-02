@@ -24,3 +24,20 @@
 * Nameserver test for an own domain of the Community
 * Check for duplicate Nameserver SOA Record
 * test ping in different sizes and show the maximum package size which can be transmitted
+
+# manual test:
+
+    gw=10.116.152.1
+    FWMARK=100
+    ROUTING_TABLE=100
+    ip rule add fwmark ${FWMARK} table ${ROUTING_TABLE}
+    ip route add 0.0.0.0/1 via $gw table ${ROUTING_TABLE}
+    ip route add 128.0.0.0/1 via $gw table ${ROUTING_TABLE}
+    ip route replace unreachable default table ${ROUTING_TABLE}
+
+    ping -m 100 -I wlp1s0 -c 2  -i .2 -W 2 -q 217.70.197.62
+    
+    #cleanup:
+    ip route flush table ${ROUTING_TABLE}
+    ip rule del fwmark ${FWMARK} table ${ROUTING_TABLE}
+    
