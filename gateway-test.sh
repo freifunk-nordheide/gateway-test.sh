@@ -40,11 +40,17 @@ FWMARK=100
 # the host we like to ping/ ip addr
 TARGET_HOST=217.70.197.62
 
-COMMUNITY_TLD=ffnord
+# the dns record we like to receive
+TARGET_DNS_RECORD=www.heise.de
+
+# Default TLD, if none is detected
+COMMUNITY_TLD=ffki
 
 # Detect Top Level Domain of your community
 echo -n "automatic tld detection."
 for tld in ffki ffhh fffl ffnord fmdk ffe ffhl; do
+  # set a break here to disable auto detection:
+  # break
   echo -n "."
   dig $tld|grep -q NOERROR
   if [ "$?" == "0" ]; then
@@ -55,8 +61,10 @@ done
 
 echo " $COMMUNITY_TLD"
 
-# the dns record we like to receive
-TARGET_DNS_RECORD=www.google.de
+YELLOW="\033[1;33m"; RED="\033[0;31m"; GREEN="\033[32m"; ENDCOLOR="\033[0m"
+FAILED=${RED}"FAILED"${ENDCOLOR}
+WARN=${YELLOW}"FAILED"${ENDCOLOR}
+SUCCESS=${GREEN}"Success"${ENDCOLOR}
 
 declare -A GWLIST
 
@@ -65,8 +73,7 @@ if [ $COMMUNITY_TLD = ffhh ]; then # Hamburg
     GWLIST="\
 gw01/10.112.1.11/2a03:2267::202
 gw02/10.112.42.1/2a03:2267::201
-gw09/10.112.1.9/2a03:2267::901
-gw12/10.112.1.12/2a03:2267::501"
+gw03/10.112.1.3/2a03:2267::301"
     #more GATEWAYS: 10.112.1.3 10.112.1.9 10.112.1.12
     TARGET_DNS_COMMUNITY_TLD_RECORD=gw01.$COMMUNITY_TLD
 elif [ $COMMUNITY_TLD = ffhl ]; then # Luebeck
@@ -89,9 +96,11 @@ elif [ $COMMUNITY_TLD = ffki ]; then #Kiel:
     # name/ip/ip6
 #vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
     GWLIST="\
+vpn0/10.116.160.1/fda1:384a:74de:4242::ff00
 vpn1/10.116.136.1/fda1:384a:74de:4242::ff01
 vpn2/10.116.168.1/fda1:384a:74de:4242::ff02
 vpn3/10.116.144.1/fda1:384a:74de:4242::ff03
+vpn4/10.116.152.1/fda1:384a:74de:4242::ff04
 vpn5/10.116.176.1/fda1:384a:74de:4242::ff05
 vpn6/10.116.184.1/fda1:384a:74de:4242::ff06
 vpn7/10.116.192.1/fda1:384a:74de:4242::ff07"
@@ -210,23 +219,22 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   if ping6 -c 2 -i .2 -W 2 -q $gw_ip6 > /dev/null 2>&1; then
     echo -n "."
   else
-    echo " Failed - IPv6 unreachable"
+    echo -e " ping6 -c 2 -i .2 -W 2 -q $gw_ip6 ${FAILED}"
     continue
   fi
   
   if ping -c 2 -i .2 -W 2 -q $gw > /dev/null 2>&1; then
     echo -n "."
   else
-    echo " Failed - IPv4 unreachable"
+    echo -e " ping -c 2 -i .2 -W 2 -q $gw ${FAILED}"
     continue
   fi
 
-
   : "###### Gateway functionality ping"
-  if ping -m 100 -I ${INTERFACE} -c 2  -i .2 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
+  if ping -m ${FWMARK} -I ${INTERFACE} -c 2  -i .2 -W 2 -q $TARGET_HOST > /dev/null 2>&1; then
     echo -n "."
   else
-    echo " ping throught the gateway FAILED"
+    echo -e " ping -m ${FWMARK} -I ${INTERFACE} -c 2  -i .2 -W 2 -q $TARGET_HOST ${FAILED}"
     continue
   fi
 
@@ -234,7 +242,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   if dhcping -q -i -s "$gw"; then
     echo -n "."
   else
-    echo " dhcp request test FAILED"
+    echo -e " DHCP test: dhcping -q -i -s \"$gw\" ${FAILED}"
     continue
   fi
 
@@ -242,7 +250,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   if nslookup ${TARGET_DNS_RECORD} ${gw} > /dev/null 2>&1 ; then
     echo -n "."
   else
-    echo " cannot resolve domain via gateway FAILED"
+    echo -e " Nameserver test: nslookup ${TARGET_DNS_RECORD} ${gw} ${FAILED}"
     continue
   fi
 
@@ -250,7 +258,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   if nslookup ${TARGET_DNS_COMMUNITY_TLD_RECORD} ${gw} > /dev/null 2>&1 ; then
     echo -n "."
   else
-    echo " cannot resolve ${COMMUNITY_TLD} domain via gateway FAILED"
+    echo -e " Nameserver test: nslookup ${TARGET_DNS_COMMUNITY_TLD_RECORD} ${gw} ${FAILED}"
     continue
   fi
 
@@ -258,7 +266,7 @@ cat <<< "$GWLIST" | while IFS=/ read name gw gw_ip6; do
   GATEWAY_SOA+=($(dig "@${gw}" ${COMMUNITY_TLD} SOA))
   echo -n "."
 
-  echo " Success"
+  echo -e " "${SUCCESS}
 done
 
 if [ "$VERBOSE" == "TRUE" ]; then
