@@ -48,7 +48,7 @@ COMMUNITY_TLD=ffki
 
 # Detect Top Level Domain of your community
 echo -n "automatic tld detection."
-for tld in ffki ffhh fffl ffnord fmdk ffe ffhl; do
+for tld in ffki ffnh ffhh fffl ffnord fmdk ffe ffhl; do
   # set a break here to disable auto detection:
   # break
   echo -n "."
@@ -84,6 +84,11 @@ burgtor/10.130.0.255/2001:67c:2d50::a01
 holstentor/10.130.0.253/2001:67c:2d50::a01
 huextertor/10.130.0.252/2001:67c:2d50::a01"
     TARGET_DNS_COMMUNITY_TLD_RECORD=burgtor.$COMMUNITY_TLD
+elif [ $COMMUNITY_TLD = ffnh ]; then # Nordheide
+    # List of gateways to test
+    GWLIST="\
+00.gw/10.71.0.1/fd8f:14c7:d318::fd00"
+    TARGET_DNS_COMMUNITY_TLD_RECORD=00.gw.$COMMUNITY_TLD
 elif [ $COMMUNITY_TLD = fmdk ]; then #Freemesh Denmark:
     # List of gateways to test
     # name/ip/ip6
